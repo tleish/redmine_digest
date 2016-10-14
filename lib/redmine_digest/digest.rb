@@ -1,7 +1,7 @@
 module RedmineDigest
   class Digest
     # batch size for fetching issues
-    ISSUE_BATCH_SIZE = 300
+    ISSUE_BATCH_SIZE = 1000
 
     attr_reader :digest_rule, :time_to
 

@@ -7,14 +7,14 @@
       %>
       <tr>
         <% if idx == 0 %>
-          <td rowspan="<%= d_issue.events[event_type].length %>" style="width: 10em; text-align: left; border-right: 1px solid #DDDDDD; vertical-align: bottom; border-bottom: 2px solid #DDDDDD;">
+          <td rowspan="<%= d_issue.events[event_type].length %>" style="width: 10em; text-align: left; border-right: 1px solid #DDDDDD; vertical-align: top; border-bottom: 2px solid #DDDDDD;">
             <%= l(event_type, :scope => 'event_types') %>
           </td>
         <% end %>
-        <td style="vertical-align: bottom; width: 10em;<%= bottom_border + color %>">
+        <td style="vertical-align: top; width: <%= digest.recurrent != DigestRule::DAILY ? 10 : 5 %>em;<%= bottom_border + color %>">
           <%= format_time(event.created_on, digest.recurrent != DigestRule::DAILY) %>
         </td>
-        <td style="vertical-align: bottom; width: 12em; text-align: center;<%= bottom_border %>">
+        <td style="vertical-align: top; width: 12em; text-align: center;<%= bottom_border %>">
           <%= link_to event.user.name,
                       {
                           :host => Setting.host_name,
@@ -25,7 +25,7 @@
                       },
                       :style => 'text-decoration: none;' + color %>
         </td>
-        <td style="vertical-align: bottom; <%= bottom_border + color %>">
+        <td style="vertical-align: top; <%= bottom_border + color %>">
           <% if event_type == DigestEvent::OTHER_ATTR_CHANGED %>
             <%= event.field_label %>:&nbsp;
           <% end %>

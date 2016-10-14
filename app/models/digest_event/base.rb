@@ -1,7 +1,7 @@
 class DigestEvent::Base
 
   # length of notes preview
-  NOTES_LENGTH = 300
+  NOTES_LENGTH = 1000
 
   include Redmine::I18n
   include Comparable

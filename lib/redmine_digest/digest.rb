@@ -172,15 +172,16 @@ module RedmineDigest
     end
 
     def get_changed_issue_ids
-      Journal.joins(:issue).where('issues.project_id in (?)', project_ids).
-          where('journals.created_on >= ? and journals.created_on < ?', time_from, time_to).
-          uniq.pluck(:journalized_id)
+      get_journal_scope.
+        where('journals.created_on >= ? and journals.created_on < ?', time_from, time_to).
+        uniq.pluck(:journalized_id)
     end
 
     def get_created_issue_ids
-      Issue.where('issues.project_id in (?)', project_ids).
-          where('issues.created_on >= ? and issues.created_on < ?', time_from, time_to).
-          uniq.pluck(:id)
+      issues = Issue.where('issues.project_id in (?)', project_ids).
+          where('issues.created_on >= ? and issues.created_on < ?', time_from, time_to)
+      issues.where('(issues.assigned_to_id = ? OR issues.author_id = ?)', user.id, user.id) if my_events_only?   
+      issues.uniq.pluck(:id)
     end
 
     def get_issues_scope(issue_ids)
@@ -188,6 +189,24 @@ module RedmineDigest
           where('issues.id in (?)', issue_ids).
           joins(:project).
           where(Issue.visible_condition(user))
+    end
+    
+    def get_journal_scope
+      journal = Journal.joins(:issue)
+      if my_events_only?
+        journal.
+          joins("LEFT JOIN journal_details ON journals.id = journal_details.journal_id AND property = 'attr' AND prop_key = 'assigned_to_id'").
+          joins("LEFT JOIN watchers ON watchers.watchable_type='Issue' AND watchers.watchable_id = issues.id").
+          where('watchers.user_id = ? OR issues.author_id = ? OR issues.assigned_to_id = ? OR 
+                 journal_details.old_value = ? OR journal_details.value = ? OR journals.user_id = ?', 
+                 user.id, user.id, user.id, user.id, user.id, user.id)
+      else
+        journal.where('issues.project_id in (?)', project_ids)
+      end
+    end
+    
+    def my_events_only?
+      project_selector == DigestRule::MY_EVENTS
     end
 
     def project_ids

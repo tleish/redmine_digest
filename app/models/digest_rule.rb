@@ -4,7 +4,8 @@ class DigestRule < ActiveRecord::Base
   NOT_SELECTED = 'not_selected'
   MEMBER = 'member'
   MEMBER_NOT_SELECTED = 'member_not_selected'
-  PROJECT_SELECTOR_VALUES = [ALL, SELECTED, NOT_SELECTED, MEMBER, MEMBER_NOT_SELECTED]
+  MY_EVENTS = 'my_events'
+  PROJECT_SELECTOR_VALUES = [ALL, SELECTED, NOT_SELECTED, MEMBER, MEMBER_NOT_SELECTED, MY_EVENTS]
 
   NOTIFY_AND_DIGEST = 'all'
   NOTIFY_ONLY = 'notify'
@@ -151,7 +152,7 @@ class DigestRule < ActiveRecord::Base
 
   def get_projects_scope
     case project_selector
-      when ALL
+      when ALL, MY_EVENTS
         nil
       when SELECTED
         ['projects.id in (?)', project_ids]
@@ -162,7 +163,7 @@ class DigestRule < ActiveRecord::Base
       when MEMBER_NOT_SELECTED
         ['members.user_id = ? and projects.id not in (?)', user.id, project_ids]
       else
-        raise RedmineDigest::Error.new "Unknown project selector (#{project_selector})"
+        raise RedmineDigest::DigestError.new "Unknown project selector (#{project_selector})"
     end
   end
 

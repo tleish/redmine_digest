@@ -5,7 +5,8 @@ class DigestRule < ActiveRecord::Base
   MEMBER                  = 'member'
   MEMBER_NOT_SELECTED     = 'member_not_selected'
   ALL_INVOLVED            = 'all_involved'
-  PROJECT_SELECTOR_VALUES = [ALL, SELECTED, NOT_SELECTED, MEMBER, MEMBER_NOT_SELECTED, ALL_INVOLVED]
+  ISSUE_QUERY             = 'issue_query'
+  PROJECT_SELECTOR_VALUES = [ALL, SELECTED, NOT_SELECTED, MEMBER, MEMBER_NOT_SELECTED, ALL_INVOLVED, ISSUE_QUERY]
 
   NOTIFY_AND_DIGEST = 'all'
   NOTIFY_ONLY       = 'notify'
@@ -73,6 +74,20 @@ class DigestRule < ActiveRecord::Base
       uniq.pluck('projects.id')
   end
 
+  def affected_issue_query_journal_ids
+    return [] unless issue_query? && issue_query
+    issue_query.journals_scope.pluck(:id)
+  end
+
+  def affected_issue_query_issue_ids
+    return [] unless issue_query? && issue_query
+    issue_query.journal_scope.pluck(:id)
+  end
+
+  def issue_query
+    @issue_query ||= IssueQuery.find(project_ids.first)
+  end
+
   def calculate_time_from(time_to)
     case recurrent
       when DAILY
@@ -87,7 +102,8 @@ class DigestRule < ActiveRecord::Base
   end
 
   def find_events_by_journal(journal)
-    return [] unless affected_project_ids.include?(journal.issue.project_id)
+    return [] unless affected_issue_query_journal_ids.include?(journal.id) ||
+                      affected_project_ids.include?(journal.issue.project_id)
 
     events = []
 
@@ -110,7 +126,7 @@ class DigestRule < ActiveRecord::Base
 
   def apply_for_created_issue?(issue)
     event_type_enabled?(DigestEvent::ISSUE_CREATED) &&
-      affected_project_ids.include?(issue.project_id)
+      (affected_project_ids.include?(issue.project_id) || affected_issue_query_issue_ids.include?(issue.id))
   end
 
   def apply_for_updated_issue?(journal)
@@ -131,6 +147,10 @@ class DigestRule < ActiveRecord::Base
 
   def all_involved_only?
     project_selector == ALL_INVOLVED
+  end
+
+  def issue_query?
+    project_selector == ISSUE_QUERY
   end
 
   private
@@ -166,6 +186,8 @@ class DigestRule < ActiveRecord::Base
         ['members.user_id = ?', user.id]
       when MEMBER_NOT_SELECTED
         ['members.user_id = ? and projects.id not in (?)', user.id, project_ids]
+      when ISSUE_QUERY
+        ['0 = 1']
       else
         raise RedmineDigest::Error.new "Unknown project selector (#{project_selector})"
     end

@@ -5,7 +5,7 @@ module RedmineDigest
 
     attr_reader :digest_rule, :time_to
 
-    delegate :name, :user, :recurrent, :project_selector, :all_involved_only?,
+    delegate :name, :user, :recurrent, :project_selector, :all_involved_only?, :issue_query, :issue_query?,
              to: :digest_rule, allow_nil: true
 
     def initialize(digest_rule, time_to = nil, issue_limit = nil)
@@ -37,6 +37,7 @@ module RedmineDigest
     end
 
     def projects_count
+      @projects_count = 0 if issue_query?
       @projects_count ||= issues.map(&:project_id).uniq.count
     end
 
@@ -101,7 +102,7 @@ module RedmineDigest
         d_issue.status_id = status_id_change.value if status_id_change
 
         next if journal.private_notes? &&
-          !user.allowed_to?(:view_private_notes, issue.project)
+            !user.allowed_to?(:view_private_notes, issue.project)
 
         events.each do |event|
           d_issue.last_updated_on = journal.created_on
@@ -178,10 +179,19 @@ module RedmineDigest
     end
 
     def get_created_issue_ids
+      return issue_query_issue_ids if issue_query?
       Issue.where('issues.project_id in (?)', project_ids).
-        where('issues.created_on >= ? and issues.created_on < ?', time_from, time_to).
+        where(issue_created_in_range).
         where(user_is_involved_in_issues).
         uniq.pluck(:id)
+    end
+
+    def issue_query_issue_ids
+      issue_query.issue_ids(conditions: issue_created_in_range)
+    end
+
+    def issue_created_in_range
+      ['issues.created_on >= ? and issues.created_on < ?', time_from, time_to]
     end
 
     def user_is_involved_in_issues
@@ -197,6 +207,8 @@ module RedmineDigest
     def get_journal_scope
       if all_involved_only?
         get_journal_all_involved_scope
+      elsif issue_query?
+        issue_query.journals_scope
       else
         Journal.joins(:issue).where('issues.project_id in (?)', project_ids)
       end

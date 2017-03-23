@@ -2,10 +2,20 @@ $(document).ready(function () {
 
   var toggleProjectList = function () {
     var selectedVal = $("#digest_rule_project_selector").val();
-    if ($.inArray(selectedVal, ["selected", "not_selected", "member_not_selected"]) < 0) {
-      $("#digest-rule-projects").hide();
-    } else {
-      $("#digest-rule-projects").show();
+    switch (selectedVal) {
+        case 'selected':
+        case 'not_selected':
+        case 'member_not_selected':
+            $("#digest-rule-issue-queries").hide();
+            $("#digest-rule-projects").show();
+            break;
+        case 'issue_query':
+            $("#digest-rule-issue-queries").show();
+            $("#digest-rule-projects").hide();
+            break;
+        default:
+            $("#digest-rule-issue-queries").hide();
+            $("#digest-rule-projects").hide();
     }
   };
 
@@ -13,6 +23,11 @@ $(document).ready(function () {
     width: "40%",
     allowClear: false
   }).on("change", toggleProjectList);
+
+  $("#digest-rule-issue-queries > select").select2({
+      width: "40%",
+      allowClear: false
+  });
 
   $("#digest_rule_raw_project_ids").select2({
     width: "40%",

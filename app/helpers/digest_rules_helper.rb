@@ -26,6 +26,19 @@ module DigestRulesHelper
     result
   end
 
+  def query_ids_options_for_select
+    issue_query = IssueQuery.visible.select('projects.name as project_name', 'queries.*').
+                             order('project_name', 'queries.name')
+    issue_query.map do |issue_query|
+      prefix = issue_query.project_name? ? "#{issue_query.project_name} > " : '';
+      ["#{prefix}#{issue_query.name}", issue_query.id]
+    end
+  end
+
+  def issue_query_ids
+    @digest_rule.project_ids if @digest_rule.issue_query?
+  end
+
   # expected option keys are:
   #  only: []    - array of projects that will be included in tree
   #  except: []  - array of projects that will be excluded from tree

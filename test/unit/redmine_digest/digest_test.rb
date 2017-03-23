@@ -2,7 +2,7 @@ require File.expand_path('../../../test_helper', __FILE__)
 
 class RedmineDigest::DigestTest < ActiveSupport::TestCase
   fixtures :users, :user_preferences, :roles, :projects, :members, :member_roles, :email_addresses,
-           :issues, :issue_statuses, :trackers, :journals, :journal_details,
+           :issues, :issue_statuses, :trackers, :journals, :journal_details, :queries,
            :enabled_modules, :enumerations
 
   def setup
@@ -137,6 +137,22 @@ class RedmineDigest::DigestTest < ActiveSupport::TestCase
     time_to   = Journal.last.created_on + 1.hour
     digest    = RedmineDigest::Digest.new(rule, time_to)
     exp_ids   = [1, 2, 4, 6, 7, 8, 11, 14]
+    issue_ids = digest.issues.map(&:id).sort
+    assert_equal exp_ids, issue_ids
+  end
+
+  def test_issue_query
+    user      = User.find(2)
+    rule      = user.digest_rules.create(
+        name:             'test',
+        recurrent:        DigestRule::MONTHLY,
+        project_selector: DigestRule::ISSUE_QUERY,
+        raw_project_ids:  '5',
+        event_ids:        DigestEvent::TYPES
+    )
+    time_to   = Journal.last.created_on + 1.hour
+    digest    = RedmineDigest::Digest.new(rule, time_to)
+    exp_ids   = [1, 2, 5, 7, 13]
     issue_ids = digest.issues.map(&:id).sort
     assert_equal exp_ids, issue_ids
   end

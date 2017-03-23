@@ -22,8 +22,20 @@ namespace :redmine_digest do
     rules_count = rules.count
     puts "#{Time.now} Found #{rules_count} rules."
     rules.each_with_index do |rule, idx|
-      send_digest_by_rule(rule, "#{idx + 1} / #{rules_count}")
+      current_user_for(rule) do
+        send_digest_by_rule(rule, "#{idx + 1} / #{rules_count}")
+      end
     end
+  end
+
+  # Temporarily change User.current for rule 'issue_query'
+  # for IssueQuery %w(assigned_to_id author_id user_id watcher_id) == <me>
+  def current_user_for(rule)
+    original_user = User.current
+    User.current = User.find(rule.user_id) if rule.issue_query?
+    yield
+  ensure
+    User.current = original_user
   end
 
   def send_digest_by_rule(rule, npp)

@@ -7,6 +7,7 @@ require_dependency 'redmine_digest/patches/project_patch'
 require_dependency 'redmine_digest/patches/user_patch'
 require_dependency 'redmine_digest/patches/my_controller_patch'
 require_dependency 'redmine_digest/patches/issue_patch'
+require_dependency 'redmine_digest/patches/issue_query_patch'
 require_dependency 'redmine_digest/patches/journal_patch'
 
 ActionDispatch::Callbacks.to_prepare do

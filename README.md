@@ -1,3 +1,6 @@
+[![Maintained? No](https://img.shields.io/badge/maintained%3F-no!-red.svg)](https://shields.io/)
+# THIS FORK IS NO LONGER MAINTAINED
+
 # Redmine Digest Plugin
 
 [![Build Status](https://travis-ci.org/Restream/redmine_digest.png)](https://travis-ci.org/Restream/redmine_digest)
